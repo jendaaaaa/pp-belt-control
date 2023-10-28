@@ -102,22 +102,18 @@ basic.forever(function(){
     for (let i = 0; i <= 49; i++) {
         strip1A.clear()
         strip1B.clear()
-        // Add three running LEDs
         for (let j = 0; j <= 2; j++) {
             ledPosition11 = (i + j) % NUM_LEDS_PER_STRIP
             strip1A.setPixelColor(NUM_LEDS_PER_STRIP - ledPosition11, neopixel.rgb(255, 50, 0))
             strip1B.setPixelColor(NUM_LEDS_PER_STRIP - ledPosition11, neopixel.rgb(255, 50, 0))
         }
-        // Add a second group of running LEDs with an offset
         for (let k = 0; k <= 2; k++) {
-            // Half-length offset of 25
             ledPosition12 = (i + k + 25) % NUM_LEDS_PER_STRIP
             strip1A.setPixelColor(NUM_LEDS_PER_STRIP - ledPosition12, neopixel.rgb(255, 50, 0))
             strip1B.setPixelColor(NUM_LEDS_PER_STRIP - ledPosition12, neopixel.rgb(255, 50, 0))
         }
         strip1A.show()
         strip1B.show()
-        // Adjust the speed using the 'speed' variable
         basic.pause(pause1)
     }
 })
@@ -126,22 +122,18 @@ basic.forever(function(){
     for (let i = 0; i <= 49; i++) {
         strip2A.clear()
         strip2B.clear()
-        // Add three running LEDs
         for (let j = 0; j <= 2; j++) {
             ledPosition21 = (i + j) % NUM_LEDS_PER_STRIP
             strip2A.setPixelColor(NUM_LEDS_PER_STRIP - ledPosition21, neopixel.rgb(255, 50, 0))
             strip2B.setPixelColor(NUM_LEDS_PER_STRIP - ledPosition21, neopixel.rgb(255, 50, 0))
         }
-        // Add a second group of running LEDs with an offset
         for (let k = 0; k <= 2; k++) {
-            // Half-length offset of 25
             ledPosition22 = (i + k + 25) % NUM_LEDS_PER_STRIP
             strip2A.setPixelColor(NUM_LEDS_PER_STRIP - ledPosition22, neopixel.rgb(255, 50, 0))
             strip2B.setPixelColor(NUM_LEDS_PER_STRIP - ledPosition22, neopixel.rgb(255, 50, 0))
         }
         strip2A.show()
         strip2B.show()
-        // Adjust the speed using the 'speed' variable
         basic.pause(pause2)
     }
 })
