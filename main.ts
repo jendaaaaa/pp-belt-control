@@ -1,40 +1,44 @@
 let NUM_STRIPS_PER_BELT = 2
-let NUM_LEDS_PER_STRIP = 49
+let NUM_LEDS_PER_STRIP = 48
 
 // LED PINS
-let PIN_L1A = DigitalPin.P0
-let PIN_L1B = DigitalPin.P1
-let PIN_L2A = DigitalPin.P2
-let PIN_L2B = DigitalPin.P8
-let PIN_ARR_LEDS = [PIN_L1A, PIN_L1B, PIN_L2A, PIN_L2B]
+let PIN_LA = DigitalPin.P0
+let PIN_LB = DigitalPin.P1
+let PIN_LA2 = DigitalPin.P2
+let PIN_LB2 = DigitalPin.P8
+let PIN_ARR_LEDS = [PIN_LA, PIN_LB, PIN_LA2, PIN_LB2]
 let NUM_PIN_LEDS = PIN_ARR_LEDS.length
 
 // MOTOR PINS
-let PIN_M1A = PCA9685.LEDNum.LED15
-let PIN_M1B = PCA9685.LEDNum.LED16
-let PIN_M2A = PCA9685.LEDNum.LED13
-let PIN_M2B = PCA9685.LEDNum.LED14
-let PIN_ARR_MOTORS = [PIN_M1A, PIN_M1B, PIN_M2A, PIN_M2B]
+let PIN_MA = PCA9685.LEDNum.LED15
+let PIN_MB = PCA9685.LEDNum.LED16
+let PIN_MA2 = PCA9685.LEDNum.LED13
+let PIN_MB2 = PCA9685.LEDNum.LED14
+let PIN_ARR_MOTORS = [PIN_MA, PIN_MB, PIN_MA2, PIN_MB2]
 let NUM_PIN_MOTORS = PIN_ARR_MOTORS.length
 
 // NEOPIXEL
-let strip1A = neopixel.create(PIN_L1A, NUM_LEDS_PER_STRIP, NeoPixelMode.RGB)
-let strip1B = neopixel.create(PIN_L1B, NUM_LEDS_PER_STRIP, NeoPixelMode.RGB)
-let strip2A = neopixel.create(PIN_L2A, NUM_LEDS_PER_STRIP, NeoPixelMode.RGB)
-let strip2B = neopixel.create(PIN_L2B, NUM_LEDS_PER_STRIP, NeoPixelMode.RGB)
-let pause1 = 0
-let pause2 = 0
-let STRIP_ARR = [strip1A, strip1B, strip2A, strip2B]
+let stripA = neopixel.create(PIN_LA, NUM_LEDS_PER_STRIP, NeoPixelMode.RGB)
+let stripB = neopixel.create(PIN_LB, NUM_LEDS_PER_STRIP, NeoPixelMode.RGB)
+let stripA2 = neopixel.create(PIN_LA2, NUM_LEDS_PER_STRIP, NeoPixelMode.RGB)
+let stripB2 = neopixel.create(PIN_LB2, NUM_LEDS_PER_STRIP, NeoPixelMode.RGB)
+let STRIP_ARR = [stripA, stripB, stripA2, stripB2]
+let delay = 0
+let delay2 = 0
+let NUM_GROUPS = 7
+let NUM_LEDS_PER_GROUP = 2
+let GAP_LEDS = 15
+let groups: { start: number, end: number, color: number, speed: number }[] = [];
 
 // BUTTONS
-let PIN_B1 = DigitalPin.P14
-let PIN_B2 = DigitalPin.P15
-let PIN_B1L = DigitalPin.P9
-let PIN_B2L = DigitalPin.P13
-pins.setPull(PIN_B1,PinPullMode.PullUp)
-pins.setPull(PIN_B2,PinPullMode.PullUp)
-let stripButton1 = neopixel.create(PIN_B1L,10, NeoPixelMode.RGB)
-let stripButton2 = neopixel.create(PIN_B2L,10, NeoPixelMode.RGB)
+let PIN_BUT = DigitalPin.P14
+let PIN_BUT2 = DigitalPin.P15
+let PIN_BUT_LED = DigitalPin.P9
+let PIN_BUT_LED2 = DigitalPin.P13
+pins.setPull(PIN_BUT,PinPullMode.PullUp)
+pins.setPull(PIN_BUT2,PinPullMode.PullUp)
+let stripButton = neopixel.create(PIN_BUT_LED,10, NeoPixelMode.RGB)
+let stripButton2 = neopixel.create(PIN_BUT_LED2,10, NeoPixelMode.RGB)
 
 // COLORS
 let COL_ORANGE = 16725760
@@ -45,24 +49,24 @@ let COL_RED = NeoPixelColors.Red
 let COL_FORWARD = COL_GREEN
 let COL_STOP = COL_RED
 let COL_BACKWARD = COL_ORANGE
-
+let COL_WHITE = NeoPixelColors.White
 
 // DEBOUNCING
-let lastButtonState1 = 0
+let lastButtonState = 0
 let lastButtonState2 = 0
-let lastDebounceTime1 = 0
+let lastDebounceTime = 0
 let lastDebounceTime2 = 0
 let TIME_DEBOUNCE = 30
-let buttonState1 = 1
+let buttonState = 1
 let buttonState2 = 1
 let PIN_PRESSED = 0
 
 // PCA9685
-let motor1A = 0
-let motor1B = 0
-let motor2A = 0
-let motor2B = 0
-let MOTOR_ARR = [motor1A, motor1B, motor2A, motor2B]
+let motorA = 0
+let motorB = 0
+let motorA2 = 0
+let motorB2 = 0
+let MOTOR_ARR = [motorA, motorB, motorA2, motorB2]
 let ADDRESS = PCA9685.chipAddress("0x40")
 
 // SPEED
@@ -75,10 +79,30 @@ let LED_BRIGHTNESS = 255
 let DELAY_STRIP_STOP = 500
 let DELAY_STRIP = 200
 let DELAY_STRIP_SLOW = 100
-let ledPosition11 = 0
-let ledPosition12 = 0
-let ledPosition21 = 0
-let ledPosition22 = 0
+let ledPositions: number[] = []
+let ledPositions2: number[] = []
+
+/////////////////////////////////////////////////////////////
+//// RANDOM STATES
+// VARIABLES
+let timeUntilNext = 0
+let timeUntilNext2 = 0
+let timePreviousCheck = 0
+let timePreviousCheck2 = 0
+let timeCheck = 0
+let timeCheck2 = 0
+let availableState = 0
+let availableState2 = 0
+let stateActive = false
+let stateActive2 = false
+
+// TIME CONSTANTS
+let TIME_TO_CHOOSE = 600
+let TIME_INTERVAL_MAX = 5
+let TIME_INTERVAL_MIN = 1
+let TIME_STATE_STOP = 2000
+let TIME_STATE_FORWARD = 4000
+let TIME_STATE_BACKWARD = 2000
 
 /////////////////////////////////////////////////////////////
 //// STATE MACHINE CONSTANTS
@@ -86,216 +110,321 @@ let ledPosition22 = 0
 let STATE_STOP = 0
 let STATE_FORWARD = 1
 let STATE_BACKWARD = 2
-let STATE_FORWARD_SLOW = 3
-let STATE_BACKWARD_SLOW = 4
-
-// BUTTONS
-let B_STATE_FORWARD = 0
-let B_STATE_BACKWARD = 1
-let B_STATE_STOP = 2
+let STATE_NONE = -1
+let STATE_ARR = [STATE_FORWARD, STATE_BACKWARD, STATE_STOP]
+let NUM_STATE = STATE_ARR.length
 
 /////////////////////////////////////////////////////////////
 //// INIT
-let buttonsBusy = false
-let reverse = false
-let i = 0
-let i2 = 0
-let state1 = STATE_STOP
-let state2 = STATE_STOP
-let bState1 = B_STATE_STOP
-let bState2 = B_STATE_STOP
+let buttonBusy = false
+let buttonBusy2 = false
+let state = STATE_NONE
+let state2 = STATE_NONE
+let color = COL_WHITE
+let color2 = COL_WHITE
 for (let i = 0; i < STRIP_ARR.length; i++){
     STRIP_ARR[i].setBrightness(LED_BRIGHTNESS)
 }
+initLedPositions()
+initLedPositions2()
+timePreviousCheck = input.runningTime()
+timePreviousCheck2 = timePreviousCheck
+timeUntilNext = randint(TIME_INTERVAL_MIN * 1000, TIME_INTERVAL_MAX * 1000)
+timeUntilNext2 = timeUntilNext
+availableState = STATE_NONE
+availableState2 = STATE_NONE
 PCA9685.reset(ADDRESS)
-PCA9685.setLedDutyCycle(PIN_M1A, motor1A, ADDRESS)
-PCA9685.setLedDutyCycle(PIN_M1B, motor1B, ADDRESS)
-PCA9685.setLedDutyCycle(PIN_M2A, motor2A, ADDRESS)
-PCA9685.setLedDutyCycle(PIN_M2A, motor2B, ADDRESS)
+PCA9685.setLedDutyCycle(PIN_MA, motorA, ADDRESS)
+PCA9685.setLedDutyCycle(PIN_MB, motorB, ADDRESS)
+PCA9685.setLedDutyCycle(PIN_MA2, motorA2, ADDRESS)
+PCA9685.setLedDutyCycle(PIN_MA2, motorB2, ADDRESS)
+
+/////////////////////////////////////////////////////////////
+//// RANDOM STATES
+basic.forever(function () {
+    if (input.runningTime() > timePreviousCheck + timeUntilNext){
+        if (!stateActive){
+            availableState = randint(0, 2)
+            pause(TIME_TO_CHOOSE)
+            timeUntilNext = randint(TIME_INTERVAL_MIN, TIME_INTERVAL_MAX)*1000
+            timePreviousCheck = input.runningTime()
+        }
+    } else {
+        availableState = STATE_NONE
+    }
+})
+
+basic.forever(function () {
+    if (input.runningTime() > timePreviousCheck2 + timeUntilNext2) {
+        if (!stateActive2) {
+            availableState2 = randint(0, 2)
+            pause(TIME_TO_CHOOSE)
+            timeUntilNext2 = randint(TIME_INTERVAL_MIN, TIME_INTERVAL_MAX) * 1000
+            timePreviousCheck2 = input.runningTime()
+        }
+    } else {
+        availableState2 = STATE_NONE
+    }
+})
 
 /////////////////////////////////////////////////////////////
 //// MOTOR MODES
 basic.forever(function(){
-    if (state1 === STATE_STOP){
-        motor1A = STOP
-        motor1B = STOP
-        pause1 = DELAY_STRIP_STOP
-    } else if (state1 === STATE_FORWARD){
-        motor1A = STOP
-        motor1B = SPEED
-        pause1 = DELAY_STRIP
-        reverse = false
-    } else if (state1 === STATE_BACKWARD){
-        motor1A = SPEED
-        motor1B = STOP
-        pause1 = DELAY_STRIP_SLOW
-        reverse = true
+    if (state === STATE_STOP){
+        if (input.runningTime() < timeCheck + TIME_STATE_STOP){
+            motorA = STOP
+            motorB = STOP
+            color = COL_STOP
+            delay = DELAY_STRIP_STOP
+            stateActive = true
+        } else {
+            state = STATE_NONE
+            stateActive = false
+            timePreviousCheck = input.runningTime()
+        }
+    } else if (state === STATE_FORWARD){
+        if (input.runningTime() < timeCheck + TIME_STATE_FORWARD) {
+            motorA = STOP
+            motorB = SPEED
+            color = COL_FORWARD
+            delay = DELAY_STRIP
+            stateActive = true
+        } else {
+            state = STATE_NONE
+            stateActive = false
+            timePreviousCheck = input.runningTime()
+        }
+    } else if (state === STATE_BACKWARD){
+        if (input.runningTime() < timeCheck + TIME_STATE_FORWARD) {
+            motorA = SPEED
+            motorB = STOP
+            color = COL_BACKWARD
+            delay = DELAY_STRIP
+            stateActive = true
+        } else {
+            state = STATE_NONE
+            stateActive = false
+            timePreviousCheck = input.runningTime()
+        }
+    } else if (state === STATE_NONE){
+        motorA = STOP
+        motorB = SPEED_SLOW
+        color = COL_WHITE
+        delay = DELAY_STRIP_SLOW
+        stateActive = false
     }
-    PCA9685.setLedDutyCycle(PIN_M1A, motor1A, ADDRESS)
-    PCA9685.setLedDutyCycle(PIN_M1B, motor1B, ADDRESS)
+
+    PCA9685.setLedDutyCycle(PIN_MA, motorA, ADDRESS)
+    PCA9685.setLedDutyCycle(PIN_MB, motorB, ADDRESS)
 })
 
 basic.forever(function () {
     if (state2 === STATE_STOP) {
-        motor2A = STOP
-        motor2B = STOP
-        pause2 = DELAY_STRIP_STOP
+        if (input.runningTime() < timeCheck2 + TIME_STATE_STOP) {
+            motorA2 = STOP
+            motorB2 = STOP
+            color2 = COL_STOP
+            delay2 = DELAY_STRIP_STOP
+            stateActive2 = true
+        } else {
+            state2 = STATE_NONE
+            stateActive2 = false
+            timePreviousCheck2 = input.runningTime()
+        }
     } else if (state2 === STATE_FORWARD) {
-        motor2A = STOP
-        motor2B = SPEED
-        pause2 = DELAY_STRIP
-        reverse = false
+        if (input.runningTime() < timeCheck2 + TIME_STATE_FORWARD) {
+            motorA2 = STOP
+            motorB2 = SPEED
+            color2 = COL_FORWARD
+            delay2 = DELAY_STRIP
+            stateActive2 = true
+        } else {
+            state2 = STATE_NONE
+            stateActive2 = false
+            timePreviousCheck2 = input.runningTime()
+        }
     } else if (state2 === STATE_BACKWARD) {
-        motor2A = SPEED
-        motor2B = STOP
-        pause2 = DELAY_STRIP_SLOW
-        reverse = true
+        if (input.runningTime() < timeCheck2 + TIME_STATE_FORWARD) {
+            motorA2 = SPEED
+            motorB2 = STOP
+            color2 = COL_BACKWARD
+            delay2 = DELAY_STRIP
+            stateActive2 = true
+        } else {
+            state2 = STATE_NONE
+            stateActive2 = false
+            timePreviousCheck2 = input.runningTime()
+        }
+    } else if (state2 === STATE_NONE) {
+        motorA2 = STOP
+        motorB2 = SPEED_SLOW+20
+        color2 = COL_WHITE
+        delay2 = DELAY_STRIP_SLOW
+        stateActive2 = false
     }
-    PCA9685.setLedDutyCycle(PIN_M2A, motor2A, ADDRESS)
-    PCA9685.setLedDutyCycle(PIN_M2B, motor2B, ADDRESS)
+
+    PCA9685.setLedDutyCycle(PIN_MA2, motorA2, ADDRESS)
+    PCA9685.setLedDutyCycle(PIN_MB2, motorB2, ADDRESS)
 })
+
 /////////////////////////////////////////////////////////////
 //// LED STRIPS
-basic.forever(function(){
-    strip1A.clear()
-    strip1B.clear()
-    if (!reverse){
-        for (let j = 0; j <= 2; j++) {
-            ledPosition11 = (i + j) % NUM_LEDS_PER_STRIP
-            strip1A.setPixelColor(NUM_LEDS_PER_STRIP - ledPosition11, COL_FORWARD)
-            strip1B.setPixelColor(NUM_LEDS_PER_STRIP - ledPosition11, COL_FORWARD)
+basic.forever(function() {
+    stripA.clear()
+    stripB.clear()
+    for (let i = 0; i < ledPositions.length; i++) {
+        if (state === STATE_STOP) {
+            //
+        } else if (state === STATE_BACKWARD) {
+            ledPositions[i]++
+            if (ledPositions[i] >= NUM_LEDS_PER_STRIP) {
+                ledPositions[i] = 0
+            }
+        } else if (state === STATE_FORWARD) {
+            ledPositions[i]--
+            if (ledPositions[i] < 0) {
+                ledPositions[i] = NUM_LEDS_PER_STRIP - 1
+            }
+        } else if (state === STATE_NONE){
+            ledPositions[i]--
+            if (ledPositions[i] < 0) {
+                ledPositions[i] = NUM_LEDS_PER_STRIP - 1
+            }
         }
-        for (let k = 0; k <= 2; k++) {
-            ledPosition12 = (i + k + 25) % NUM_LEDS_PER_STRIP
-            strip1A.setPixelColor(NUM_LEDS_PER_STRIP - ledPosition12, COL_FORWARD)
-            strip1B.setPixelColor(NUM_LEDS_PER_STRIP - ledPosition12, COL_FORWARD)
-        }
-    } else {
-        for (let j = 0; j <= 2; j++) {
-            ledPosition11 = NUM_LEDS_PER_STRIP - (i + j) % NUM_LEDS_PER_STRIP
-            strip1A.setPixelColor(NUM_LEDS_PER_STRIP - ledPosition11, COL_BACKWARD)
-            strip1B.setPixelColor(NUM_LEDS_PER_STRIP - ledPosition11, COL_BACKWARD)
-        }
-        for (let k = 0; k <= 2; k++) {
-            ledPosition12 = NUM_LEDS_PER_STRIP - (i + k + 25) % NUM_LEDS_PER_STRIP
-            strip1A.setPixelColor(NUM_LEDS_PER_STRIP - ledPosition12, COL_BACKWARD)
-            strip1B.setPixelColor(NUM_LEDS_PER_STRIP - ledPosition12, COL_BACKWARD)
-        }
+        stripA.setPixelColor(ledPositions[i], color)
+        stripB.setPixelColor(ledPositions[i], color)
     }
-    i = i + 1
-    if (i >= NUM_LEDS_PER_STRIP){
-        i = 0
-    }
-    strip1A.show()
-    strip1B.show()
-    basic.pause(pause1)
+    stripA.show()
+    stripB.show()
+    pause(delay)
 })
 
-basic.forever(function(){
-    strip2A.clear()
-    strip2B.clear()
-
-    ledPosition21 = i2
-    ledPosition22 = i2 + 25 % NUM_LEDS_PER_STRIP
-
-    for (let j = 0; j <= 2; j++) {
-        ledPosition21 = (i + j) % NUM_LEDS_PER_STRIP
-        strip2A.setPixelColor(NUM_LEDS_PER_STRIP - ledPosition21, neopixel.rgb(255, 50, 0))
-        strip2B.setPixelColor(NUM_LEDS_PER_STRIP - ledPosition21, neopixel.rgb(255, 50, 0))
+basic.forever(function () {
+    stripA2.clear()
+    stripB2.clear()
+    for (let i = 0; i < ledPositions2.length; i++) {
+        if (state2 === STATE_STOP) {
+            //
+        } else if (state2 === STATE_BACKWARD) {
+            ledPositions2[i]++
+            if (ledPositions2[i] >= NUM_LEDS_PER_STRIP) {
+                ledPositions2[i] = 0
+            }
+        } else if (state2 === STATE_FORWARD) {
+            ledPositions2[i]--
+            if (ledPositions2[i] < 0) {
+                ledPositions2[i] = NUM_LEDS_PER_STRIP - 1
+            }
+        } else if (state2 === STATE_NONE) {
+            ledPositions2[i]--
+            if (ledPositions2[i] < 0) {
+                ledPositions2[i] = NUM_LEDS_PER_STRIP - 1
+            }
+        }
+        stripA2.setPixelColor(ledPositions2[i], color2)
+        stripB2.setPixelColor(ledPositions2[i], color2)
     }
-    for (let k = 0; k <= 2; k++) {
-        ledPosition22 = (i + k + 25) % NUM_LEDS_PER_STRIP
-        strip2A.setPixelColor(NUM_LEDS_PER_STRIP - ledPosition22, neopixel.rgb(255, 50, 0))
-        strip2B.setPixelColor(NUM_LEDS_PER_STRIP - ledPosition22, neopixel.rgb(255, 50, 0))
-    }
-    i2 = i2 + 1
-    if (i2 >= NUM_LEDS_PER_STRIP){
-        i2 = 0
-    }
-    strip2A.show()
-    strip2B.show()
-    basic.pause(pause2)
+    stripA2.show()
+    stripB2.show()
+    pause(delay2)
 })
 
 /////////////////////////////////////////////////////////////
 //// BUTTONS
 basic.forever(function() {
-    debounceButton1()
-    debounceButton2()
-    if (!buttonsBusy){
-        if (bState1 === B_STATE_STOP){
-            stripButton1.showColor(COL_STOP)
-            state1 = STATE_STOP
-        } else if (bState1 === B_STATE_FORWARD){
-            stripButton1.showColor(COL_FORWARD)
-            state1 = STATE_FORWARD
-        } else if (bState1 === B_STATE_BACKWARD){
-            stripButton1.showColor(COL_BACKWARD)
-            state1 = STATE_BACKWARD
+    debounceButton()
+    if (!buttonBusy && !stateActive){
+        if (availableState === STATE_STOP){
+            stripButton.showColor(COL_STOP)
+        } else if (availableState === STATE_FORWARD){
+            stripButton.showColor(COL_FORWARD)
+        } else if (availableState === STATE_BACKWARD){
+            stripButton.showColor(COL_BACKWARD)
+        } else if (availableState === STATE_NONE){
+            stripButton.showColor(COL_WHITE)
         }
-        if (bState2 === B_STATE_STOP) {
+    }
+})
+
+basic.forever(function () {
+    debounceButton2()
+    if (!buttonBusy2 && !stateActive2) {
+        if (availableState2 === STATE_STOP) {
             stripButton2.showColor(COL_STOP)
-            state2 = STATE_STOP
-        } else if (bState2 === B_STATE_FORWARD) {
+        } else if (availableState2 === STATE_FORWARD) {
             stripButton2.showColor(COL_FORWARD)
-            state2 = STATE_FORWARD
-        } else if (bState2 === B_STATE_BACKWARD) {
+        } else if (availableState2 === STATE_BACKWARD) {
             stripButton2.showColor(COL_BACKWARD)
-            state2 = STATE_BACKWARD
+        } else if (availableState2 === STATE_NONE) {
+            stripButton2.showColor(COL_WHITE)
         }
     }
 })
 
 /////////////////////////////////////////////////////////////
 //// FUNCTIONS
-function debounceButton1() {
+function debounceButton() {
     let currentTime = input.runningTime()
-    let buttonRead = pins.digitalReadPin(PIN_B1)
-    if (buttonRead !== lastButtonState1) {
-        lastDebounceTime1 = currentTime
+    let buttonRead = pins.digitalReadPin(PIN_BUT)
+    if (buttonRead !== lastButtonState) {
+        lastDebounceTime = currentTime
     }
-    if (input.runningTime() - lastDebounceTime1 > TIME_DEBOUNCE) {
-        if (buttonRead !== buttonState1) {
-            buttonState1 = buttonRead
-            if (buttonState2 !== PIN_PRESSED) {
-                if (buttonState1 === PIN_PRESSED){
-                    buttonsBusy = true
-                    stripButton1.showColor(COL_BLUE)
-                    bState1 += 1
-                    if (bState1 > 2) {
-                        bState1 = 0
-                    }
-                } else {
-                    buttonsBusy = false
-                }
+    if (input.runningTime() - lastDebounceTime > TIME_DEBOUNCE) {
+        if (buttonRead !== buttonState) {
+            buttonState = buttonRead
+            if (buttonState === PIN_PRESSED){
+                buttonBusy = true
+                stripButton.showColor(COL_BLUE)
+                state = availableState
+                timeCheck = input.runningTime()
+            } else {
+                buttonBusy = false
             }
         }
     }
-    lastButtonState1 = buttonRead
+    lastButtonState = buttonRead
 }
 
 function debounceButton2() {
-    let currentTime = input.runningTime()
-    let buttonRead = pins.digitalReadPin(PIN_B2)
-    if (buttonRead !== lastButtonState2) {
-        lastDebounceTime2 = currentTime
+    let currentTime2 = input.runningTime()
+    let buttonRead2 = pins.digitalReadPin(PIN_BUT2)
+    if (buttonRead2 !== lastButtonState2) {
+        lastDebounceTime2 = currentTime2
     }
     if (input.runningTime() - lastDebounceTime2 > TIME_DEBOUNCE) {
-        if (buttonRead !== buttonState2) {
-            buttonState2 = buttonRead
-            if (buttonState1 !== PIN_PRESSED) {
-                if (buttonState2 === PIN_PRESSED){
-                    buttonsBusy = true
-                    stripButton2.showColor(COL_BLUE)
-                    bState2 += 1
-                    if (bState2 > 2) {
-                        bState2 = 0
-                    }
-                } else {
-                    buttonsBusy = false
-                }
+        if (buttonRead2 !== buttonState2) {
+            buttonState2 = buttonRead2
+            if (buttonState2 === PIN_PRESSED) {
+                buttonBusy2 = true
+                stripButton2.showColor(COL_BLUE)
+                state2 = availableState2
+                timeCheck2 = input.runningTime()
+            } else {
+                buttonBusy2 = false
             }
         }
     }
-    lastButtonState2 = buttonRead
+    lastButtonState2 = buttonRead2
+}
+
+function initLedPositions(){
+    let gapBetweenFirstOfGroup = Math.round(NUM_LEDS_PER_STRIP / NUM_GROUPS)
+    for (let i = 0; i < NUM_LEDS_PER_STRIP; i++){
+        if ((i - NUM_LEDS_PER_GROUP) % NUM_GROUPS === 0){
+            for (let j = 0; j < NUM_LEDS_PER_GROUP; j++){
+                ledPositions.push(i - j)
+            }
+        }
+    }
+}
+
+function initLedPositions2() {
+    let gapBetweenFirstOfGroup = Math.round(NUM_LEDS_PER_STRIP / NUM_GROUPS)
+    for (let i = 0; i < NUM_LEDS_PER_STRIP; i++) {
+        if ((i - NUM_LEDS_PER_GROUP) % NUM_GROUPS === 0) {
+            for (let j = 0; j < NUM_LEDS_PER_GROUP; j++) {
+                ledPositions2.push(i - j)
+            }
+        }
+    }
 }
